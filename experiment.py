@@ -139,8 +139,7 @@ class MusicRatingTrial(StaticTrial):
             tags.p(
                 Markup(
                     """
-                    Please listen to the music clip until you are confident about your opinion, then rate it on a scale from very bad to very good.
-                    <strong>1</strong> to <strong>8</strong>.
+                    Please listen to the music clip until you are confident about your opinion, then rate it on a scale from very bad (1) to very good (8).
                     """
                 )
             )
