@@ -1,0 +1,14 @@
+# Defaults for .github/workflows/deploy-hotair.yml.
+#
+# The workflow_dispatch form is pre-filled with these values when the
+# repository is generated. If you edit this file later, update the workflow input
+# defaults to match.
+
+region=us-east-1
+instance_type=m7i.xlarge
+memory_gb=32
+server_name=music-rating-debug
+app_name=music-rating-debug
+dns_host=music-rating-debug.example.com
+ssh_key_name=music-rating-ec2
+ssh_private_key_path=.deploy/ssh/music-rating-ec2.pem
