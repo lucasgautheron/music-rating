@@ -147,7 +147,9 @@ class MusicRatingTrial(StaticTrial):
                 )
             )
             with tags.audio(
+                id="music-rating-audio",
                 controls=True,
+                autoplay=True,
                 preload="auto",
                 style="width: 100%; max-width: 720px; margin: 1rem 0;",
             ):
@@ -168,6 +170,15 @@ class MusicRatingTrial(StaticTrial):
                 max_description="8 = Very good",
             ),
             events={
+                "playStimulus": Event(
+                    is_triggered_by="trialStart",
+                    js="""
+                    const audio = document.getElementById("music-rating-audio");
+                    if (audio) {
+                        audio.play().catch(() => {});
+                    }
+                    """,
+                ),
                 "submitEnable": Event(
                     is_triggered_by="trialStart",
                     delay=MIN_MUSIC_RESPONSE_TIME,
