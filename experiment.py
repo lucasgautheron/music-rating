@@ -169,6 +169,25 @@ class MusicRatingTrial(StaticTrial):
         )
 
 
+class MusicRatingTrialMaker(StaticTrialMaker):
+    @staticmethod
+    def participant_rated_pair_ids(participant):
+        return {
+            trial.definition["pair_id"]
+            for trial in participant.alive_trials
+            if isinstance(trial, MusicRatingTrial) and trial.definition.get("pair_id")
+        }
+
+    def custom_network_filter(self, candidates, participant):
+        rated_pair_ids = self.participant_rated_pair_ids(participant)
+        return [
+            network
+            for network in candidates
+            if network.head
+            and network.head.definition.get("pair_id") not in rated_pair_ids
+        ]
+
+
 class Exp(psynet.experiment.Experiment):
     label = "Music Rating"
     test_n_bots = 1
@@ -208,7 +227,7 @@ class Exp(psynet.experiment.Experiment):
             ),
             time_estimate=5,
         ),
-        StaticTrialMaker(
+        MusicRatingTrialMaker(
             id_="music_ratings",
             trial_class=MusicRatingTrial,
             nodes=get_nodes,
@@ -236,3 +255,5 @@ class Exp(psynet.experiment.Experiment):
             if isinstance(trial, MusicRatingTrial)
         ]
         assert len(rating_trials) == N_RATING_TRIALS_PER_PARTICIPANT
+        pair_ids = [trial.definition["pair_id"] for trial in rating_trials]
+        assert len(pair_ids) == len(set(pair_ids))
