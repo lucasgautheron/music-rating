@@ -15,7 +15,7 @@ from psynet.modular_page import ModularPage, RatingControl
 from psynet.page import InfoPage, SuccessfulEndPage, VolumeCalibration
 from psynet.participant import Participant
 from psynet.prescreen import AudioForcedChoiceTest
-from psynet.timeline import Timeline
+from psynet.timeline import Event, ProgressDisplay, ProgressStage, Timeline
 from psynet.trial.static import StaticNode, StaticTrial, StaticTrialMaker
 from psynet.consent import NoConsent
 
@@ -23,6 +23,8 @@ SONG_MANIFEST = Path("static/songs.csv")
 HEARING_CHECK_MANIFEST = Path("static/hearing_check.csv")
 N_RATING_TRIALS_PER_PARTICIPANT = 20
 N_RATINGS_PER_SONG = 5
+MIN_MUSIC_RESPONSE_TIME = 10.0
+MAX_EXPECTED_MUSIC_TRIAL_DURATION = 60.0
 SONG_MANIFEST_COLUMNS = {"track_id", "pair_id", "s3_url", "http_url", "is_parent"}
 
 
@@ -131,7 +133,7 @@ if __name__ == "__main__":
 
 
 class MusicRatingTrial(StaticTrial):
-    time_estimate = 12
+    time_estimate = MAX_EXPECTED_MUSIC_TRIAL_DURATION
 
     def html5_audio_prompt(self):
         audio_url = self.assets["stimulus_audio"].url
@@ -164,6 +166,15 @@ class MusicRatingTrial(StaticTrial):
                 values=8,
                 min_description="1 = Very bad",
                 max_description="8 = Very good",
+            ),
+            events={
+                "submitEnable": Event(
+                    is_triggered_by="trialStart",
+                    delay=MIN_MUSIC_RESPONSE_TIME,
+                ),
+            },
+            progress_display=ProgressDisplay(
+                [ProgressStage(time=MAX_EXPECTED_MUSIC_TRIAL_DURATION)]
             ),
             time_estimate=self.time_estimate,
         )
