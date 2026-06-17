@@ -17,6 +17,7 @@ from psynet.participant import Participant
 from psynet.prescreen import AudioForcedChoiceTest
 from psynet.timeline import Timeline
 from psynet.trial.static import StaticNode, StaticTrial, StaticTrialMaker
+from psynet.consent import NoConsent
 
 SONG_MANIFEST = Path("static/songs.csv")
 HEARING_CHECK_MANIFEST = Path("static/hearing_check.csv")
@@ -192,6 +193,7 @@ class Exp(psynet.experiment.Experiment):
     test_n_bots = 1
 
     timeline = Timeline(
+        NoConsent(),
         InfoPage(
             Markup(
                 """
