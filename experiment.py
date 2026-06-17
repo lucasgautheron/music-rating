@@ -4,6 +4,7 @@
 
 import csv
 from pathlib import Path
+from tkinter import N
 
 from dominate import tags
 from markupsafe import Markup
@@ -17,7 +18,7 @@ from psynet.participant import Participant
 from psynet.prescreen import AudioForcedChoiceTest
 from psynet.timeline import Event, ProgressDisplay, ProgressStage, Timeline
 from psynet.trial.static import StaticNode, StaticTrial, StaticTrialMaker
-from psynet.consent import NoConsent
+from .consent_science_of_learning import consent_cococo_science_of_learning
 
 SONG_MANIFEST = Path("static/songs.csv")
 HEARING_CHECK_MANIFEST = Path("static/hearing_check.csv")
@@ -25,8 +26,11 @@ N_RATING_TRIALS_PER_PARTICIPANT = 20
 N_RATINGS_PER_SONG = 5
 MIN_MUSIC_RESPONSE_TIME = 10.0
 MAX_EXPECTED_MUSIC_TRIAL_DURATION = 60.0
+EXPECTED_TRIAL_DURATION = 40
 SONG_MANIFEST_COLUMNS = {"track_id", "pair_id", "s3_url", "http_url", "is_parent"}
 
+DURATION = N_RATING_TRIALS_PER_PARTICIPANT * EXPECTED_TRIAL_DURATION + 30
+PAYMENT = 12*DURATION/3600
 
 def load_songs():
     if not SONG_MANIFEST.exists():
@@ -133,7 +137,7 @@ if __name__ == "__main__":
 
 
 class MusicRatingTrial(StaticTrial):
-    time_estimate = MAX_EXPECTED_MUSIC_TRIAL_DURATION
+    time_estimate = EXPECTED_TRIAL_DURATION
 
     def html5_audio_prompt(self):
         audio_url = self.assets["stimulus_audio"].url
@@ -215,12 +219,12 @@ class Exp(psynet.experiment.Experiment):
     test_n_bots = 1
 
     timeline = Timeline(
-        NoConsent(),
+        consent_cococo_science_of_learning(DURATION=round(DURATION/60), PAYMENT=round(PAYMENT, 2)),
         InfoPage(
             Markup(
-                """
-                <p>Welcome! In this experiment you will listen to short music clips
-                and rate each clip on a scale from 1 to 8.</p>
+                f"""
+                <p>Welcome! In this experiment you will listen to {N_RATING_TRIALS_PER_PARTICIPANT} music clips
+                and rate each clip on a scale from very bad (1) to very good (8).</p>
                 <p>Before the ratings begin, we will check that your audio playback
                 is working.</p>
                 """
