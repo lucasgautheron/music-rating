@@ -1,6 +1,6 @@
 [Config]
-title = Music Rating (Chrome browser, ~1 minute to complete)
-description = A starter PsyNet experiment created with psynet-github.
+title = Music Rating (Chrome browser, ~6 minutes to complete)
+description = Rate music clips from 1 to 8 after passing an audio hearing check.
 contact_email_on_error = experimenter@example.com
 organization_name = PsyNet experiment
 
@@ -16,5 +16,5 @@ docker_volumes = ${HOME}/psynet-data/assets:/psynet-data/assets
 [Prolific]
 # recruiter = prolific
 auto_recruit = false
-prolific_estimated_completion_minutes = 1
-base_payment = 0.20
+prolific_estimated_completion_minutes = 6
+base_payment = 1.20

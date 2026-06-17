@@ -1,15 +1,21 @@
 # Music Rating
 
-A starter PsyNet experiment created with psynet-github.
+A PsyNet experiment where participants rate music clips on a scale from 1 to 8.
 
-This repository contains a starter PsyNet experiment. It was generated with
-`psynet-github create`.
+Participants first complete audio setup and a short forced-choice hearing check.
+They then complete 20 music rating trials by default. The static trial maker
+targets 5 completed ratings per song.
 
 Generated PsyNet dependency: PsyNet from the GitLab master branch.
 
 ## Repository layout
 
 - `experiment.py` defines the PsyNet experiment.
+- `static/songs.csv` defines the music stimulus manifest. It must contain
+  `track_id`, `pair_id`, `s3_url`, `http_url`, and `is_parent` columns. The
+  `http_url` column is used for playback; the other fields are saved with each
+  trial for export and analysis.
+- `static/hearing_check.csv` defines the audio prescreen sounds.
 - `config.txt` contains Dallinger/PsyNet configuration.
 - `requirements.txt` pins PsyNet from GitLab.
 - `constraints.txt` is present for Dallinger dependency locking workflows.
@@ -31,7 +37,6 @@ From the repository root:
 python -m pip install --upgrade pip wheel
 pip install -r requirements.txt pytest
 python experiment.py
-pytest test.py
 ```
 
 For full local PsyNet validation, ensure PostgreSQL, Redis, Docker, and the
