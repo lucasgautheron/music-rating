@@ -4,7 +4,6 @@
 
 import csv
 from pathlib import Path
-from tkinter import N
 
 from dominate import tags
 from markupsafe import Markup
@@ -26,11 +25,14 @@ N_RATING_TRIALS_PER_PARTICIPANT = 20
 N_RATINGS_PER_SONG = 5
 MIN_MUSIC_RESPONSE_TIME = 10.0
 MAX_EXPECTED_MUSIC_TRIAL_DURATION = 60.0
-EXPECTED_TRIAL_DURATION = 40
+EXPECTED_TRIAL_DURATION = 30
+WAGE_PER_HOUR = 11.0
+CONTACT_EMAIL = "kj338@cornell.edu"
 SONG_MANIFEST_COLUMNS = {"track_id", "pair_id", "s3_url", "http_url", "is_parent"}
 
 DURATION = N_RATING_TRIALS_PER_PARTICIPANT * EXPECTED_TRIAL_DURATION + 30
-PAYMENT = 12*DURATION/3600
+ESTIMATED_COMPLETION_MINUTES = round(DURATION / 60)
+PAYMENT = WAGE_PER_HOUR * ESTIMATED_COMPLETION_MINUTES / 60
 
 def load_songs():
     if not SONG_MANIFEST.exists():
@@ -218,8 +220,30 @@ class Exp(psynet.experiment.Experiment):
     label = "Music Rating"
     test_n_bots = 1
 
+    config = {
+        "title": (
+            "Music Rating"
+            f"(Chrome browser, audio listening task, ~{ESTIMATED_COMPLETION_MINUTES} minutes to complete)"
+        ),
+        "description": (
+            "Rate music clips from 1 to 8 after passing an audio hearing check."
+        ),
+        "contact_email_on_error": CONTACT_EMAIL,
+        "organization_name": "Cornell University",
+        "recruiter": "prolific",
+        "currency": "$",
+        "wage_per_hour": WAGE_PER_HOUR,
+        "auto_recruit": False,
+        "prolific_estimated_completion_minutes": ESTIMATED_COMPLETION_MINUTES,
+        "base_payment": round(PAYMENT, 2),
+        "prolific_enable_return_for_bonus": True,
+    }
+
     timeline = Timeline(
-        consent_cococo_science_of_learning(DURATION=round(DURATION/60), PAYMENT=round(PAYMENT, 2)),
+        consent_cococo_science_of_learning(
+            DURATION=ESTIMATED_COMPLETION_MINUTES,
+            PAYMENT=round(PAYMENT, 2),
+        ),
         InfoPage(
             Markup(
                 f"""
