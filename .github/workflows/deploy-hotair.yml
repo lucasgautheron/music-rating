@@ -128,7 +128,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          uv venv --python 3.13 .venv
+          uv venv --python 3.11 .venv
           source .venv/bin/activate
 
           if [ -f requirements.txt ] && [ -f constraints.txt ]; then
