@@ -1,20 +1,9 @@
 [Config]
-title = Music Rating (Chrome browser, ~6 minutes to complete)
-description = Rate music clips from 1 to 8 after passing an audio hearing check.
-contact_email_on_error = experimenter@example.com
-organization_name = PsyNet experiment
-
-recruiter = generic
-currency = $
-wage_per_hour = 12.0
+# Experiment-facing recruitment, payment, and contact settings are defined in
+# Exp.config in experiment.py.
 host = 0.0.0.0
 
 # Required for PsyNet/Dallinger Docker SSH launches.
 docker_image_base_name = ghcr.io/lucasgautheron/music-rating/psynet-experiment-images
 docker_volumes = ${HOME}/psynet-data/assets:/psynet-data/assets
 
-[Prolific]
-# recruiter = prolific
-auto_recruit = false
-prolific_estimated_completion_minutes = 6
-base_payment = 1.20

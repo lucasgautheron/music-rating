@@ -46,6 +46,16 @@ Heroku CLI are available, then run:
 psynet test local
 ```
 
+## Prolific Configuration
+
+Prolific recruitment is configured in `Exp.config` in `experiment.py`, with
+`recruiter = prolific` and `auto_recruit = false`, so recruitment should be
+controlled from the Prolific researcher interface. The current estimate is
+14 minutes at $11/hour.
+
+If the number of rating trials or expected trial duration changes, update both
+the timing/payment constants and `Exp.config` in `experiment.py`.
+
 ## Hotair debug deployment
 
 The generated `Deploy hotair debug experiment` GitHub Actions workflow can be
