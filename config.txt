@@ -4,6 +4,6 @@
 host = 0.0.0.0
 
 # Required for PsyNet/Dallinger Docker SSH launches.
-docker_image_base_name = ghcr.io/lucasgautheron/music-rating/psynet-experiment-images
-docker_volumes = ${HOME}/psynet-data/assets:/psynet-data/assets
+# docker_image_base_name = ghcr.io/lucasgautheron/music-rating/psynet-experiment-images
+# docker_volumes = ${HOME}/psynet-data/assets:/psynet-data/assets
 

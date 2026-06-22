@@ -3,6 +3,7 @@
 # pylint: disable=missing-class-docstring,missing-function-docstring
 
 import csv
+from collections import Counter
 from pathlib import Path
 
 from dominate import tags
@@ -19,16 +20,28 @@ from psynet.timeline import Event, ProgressDisplay, ProgressStage, Timeline
 from psynet.trial.static import StaticNode, StaticTrial, StaticTrialMaker
 from .consent_science_of_learning import consent_cococo_science_of_learning
 
-SONG_MANIFEST = Path("static/songs.csv")
+SONG_MANIFEST = Path("static/popularity_songs.csv")
 HEARING_CHECK_MANIFEST = Path("static/hearing_check.csv")
-N_RATING_TRIALS_PER_PARTICIPANT = 20
+POPULARITY_BIN_COLUMN = "song_quantile"
+POPULARITY_BINS = ("top 50%", "top 10%", "top 1%", "top 0.1%")
+N_RATING_TRIALS_PER_POPULARITY_BIN = 5
+N_RATING_TRIALS_PER_PARTICIPANT = (
+    N_RATING_TRIALS_PER_POPULARITY_BIN * len(POPULARITY_BINS)
+)
 N_RATINGS_PER_SONG = 5
 MIN_MUSIC_RESPONSE_TIME = 10.0
 MAX_EXPECTED_MUSIC_TRIAL_DURATION = 60.0
 EXPECTED_TRIAL_DURATION = 30
 WAGE_PER_HOUR = 11.0
 CONTACT_EMAIL = "kj338@cornell.edu"
-SONG_MANIFEST_COLUMNS = {"track_id", "pair_id", "s3_url", "http_url", "is_parent"}
+SONG_MANIFEST_COLUMNS = {
+    "track_id",
+    "pair_id",
+    "s3_url",
+    "http_url",
+    "is_parent",
+    POPULARITY_BIN_COLUMN,
+}
 
 DURATION = N_RATING_TRIALS_PER_PARTICIPANT * EXPECTED_TRIAL_DURATION + 30
 ESTIMATED_COMPLETION_MINUTES = round(DURATION / 60)
@@ -39,7 +52,7 @@ def load_songs():
         raise FileNotFoundError(
             f"Song manifest not found at {SONG_MANIFEST}. "
             "Create a CSV with columns 'track_id', 'pair_id', 's3_url', "
-            "'http_url', and 'is_parent'."
+            f"'http_url', 'is_parent', and '{POPULARITY_BIN_COLUMN}'."
         )
 
     with SONG_MANIFEST.open(newline="", encoding="utf-8") as file:
@@ -71,6 +84,8 @@ def load_songs():
             f"{', '.join(missing_pair_ids)}."
         )
 
+    validate_popularity_bins(songs)
+
     invalid_s3_urls = [
         song["track_id"] for song in songs if not song["s3_url"].startswith("s3://")
     ]
@@ -94,6 +109,46 @@ def load_songs():
     return songs
 
 
+def validate_popularity_bins(songs):
+    missing_popularity_bins = [
+        song["track_id"] for song in songs if not song[POPULARITY_BIN_COLUMN]
+    ]
+    if missing_popularity_bins:
+        raise ValueError(
+            f"The following songs do not have {POPULARITY_BIN_COLUMN} values: "
+            f"{', '.join(missing_popularity_bins)}."
+        )
+
+    observed_bins = {song[POPULARITY_BIN_COLUMN] for song in songs}
+    expected_bins = set(POPULARITY_BINS)
+    missing_bins = expected_bins.difference(observed_bins)
+    if missing_bins:
+        raise ValueError(
+            f"{SONG_MANIFEST} is missing popularity bins: "
+            f"{', '.join(sorted(missing_bins))}."
+        )
+
+    unexpected_bins = observed_bins.difference(expected_bins)
+    if unexpected_bins:
+        raise ValueError(
+            f"{SONG_MANIFEST} contains unexpected popularity bins: "
+            f"{', '.join(sorted(unexpected_bins))}."
+        )
+
+    for popularity_bin in POPULARITY_BINS:
+        tracks_in_bin = [
+            song
+            for song in songs
+            if song[POPULARITY_BIN_COLUMN] == popularity_bin
+        ]
+        if len(tracks_in_bin) < N_RATING_TRIALS_PER_POPULARITY_BIN:
+            raise ValueError(
+                f"{SONG_MANIFEST} must contain at least "
+                f"{N_RATING_TRIALS_PER_POPULARITY_BIN} tracks "
+                f"for popularity bin '{popularity_bin}'."
+            )
+
+
 def parse_bool(value, track_id):
     normalized_value = value.strip().lower()
     if normalized_value in {"true", "1", "yes"}:
@@ -114,6 +169,7 @@ def get_nodes():
                 "s3_url": song["s3_url"],
                 "http_url": song["http_url"],
                 "is_parent": song["is_parent"],
+                POPULARITY_BIN_COLUMN: song[POPULARITY_BIN_COLUMN],
                 "manifest_row": song["manifest_row"],
             },
             assets={
@@ -135,7 +191,10 @@ if __name__ == "__main__":
     songs = load_songs()
     print(f"Found {len(songs)} songs in {SONG_MANIFEST}:")
     for song in songs:
-        print(f"- {song['track_id']}: {song['http_url']}")
+        print(
+            f"- {song['track_id']} ({song[POPULARITY_BIN_COLUMN]}): "
+            f"{song['http_url']}"
+        )
 
 
 class MusicRatingTrial(StaticTrial):
@@ -199,21 +258,41 @@ class MusicRatingTrial(StaticTrial):
 
 class MusicRatingTrialMaker(StaticTrialMaker):
     @staticmethod
-    def participant_rated_pair_ids(participant):
-        return {
-            trial.definition["pair_id"]
+    def participant_popularity_bin_counts(participant):
+        counts = Counter(
+            trial.definition[POPULARITY_BIN_COLUMN]
             for trial in participant.alive_trials
-            if isinstance(trial, MusicRatingTrial) and trial.definition.get("pair_id")
+            if isinstance(trial, MusicRatingTrial)
+            and trial.definition.get(POPULARITY_BIN_COLUMN)
+        )
+        return {
+            popularity_bin: counts[popularity_bin]
+            for popularity_bin in POPULARITY_BINS
         }
 
     def custom_network_filter(self, candidates, participant):
-        rated_pair_ids = self.participant_rated_pair_ids(participant)
+        popularity_bin_counts = self.participant_popularity_bin_counts(participant)
         return [
             network
             for network in candidates
             if network.head
-            and network.head.definition.get("pair_id") not in rated_pair_ids
+            and self.is_candidate_under_participant_quotas(
+                network.head.definition,
+                popularity_bin_counts,
+            )
         ]
+
+    @staticmethod
+    def is_candidate_under_participant_quotas(
+        definition,
+        popularity_bin_counts,
+    ):
+        popularity_bin = definition.get(POPULARITY_BIN_COLUMN)
+        return (
+            popularity_bin in POPULARITY_BINS
+            and popularity_bin_counts[popularity_bin]
+            < N_RATING_TRIALS_PER_POPULARITY_BIN
+        )
 
 
 class Exp(psynet.experiment.Experiment):
@@ -255,7 +334,7 @@ class Exp(psynet.experiment.Experiment):
             ),
             time_estimate=5,
         ),
-        VolumeCalibration(),
+        # VolumeCalibration(),
         AudioForcedChoiceTest(
             csv_path=str(HEARING_CHECK_MANIFEST),
             answer_options=["dog", "bird"],
@@ -306,5 +385,12 @@ class Exp(psynet.experiment.Experiment):
             if isinstance(trial, MusicRatingTrial)
         ]
         assert len(rating_trials) == N_RATING_TRIALS_PER_PARTICIPANT
-        pair_ids = [trial.definition["pair_id"] for trial in rating_trials]
-        assert len(pair_ids) == len(set(pair_ids))
+        popularity_bins = [
+            trial.definition[POPULARITY_BIN_COLUMN] for trial in rating_trials
+        ]
+        assert Counter(popularity_bins) == Counter(
+            {
+                popularity_bin: N_RATING_TRIALS_PER_POPULARITY_BIN
+                for popularity_bin in POPULARITY_BINS
+            }
+        )
