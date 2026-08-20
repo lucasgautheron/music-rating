@@ -20,11 +20,13 @@ from psynet.timeline import Event, ProgressDisplay, ProgressStage, Timeline
 from psynet.trial.static import StaticNode, StaticTrial, StaticTrialMaker
 from .consent_science_of_learning import consent_cococo_science_of_learning
 
-SONG_MANIFEST = Path("static/sample_parents2.csv")
+SONG_MANIFEST = Path("static/random_samples_to_rate.csv")
 HEARING_CHECK_MANIFEST = Path("static/hearing_check.csv")
-POPULARITY_BIN_COLUMN = "popularity_label"
-POPULARITY_BINS = ("top 50%", "top 10%", "top 1%", "top 0.1%")
-N_RATING_TRIALS_PER_POPULARITY_BIN = 5
+#POPULARITY_BIN_COLUMN = "popularity_label"
+#POPULARITY_BINS = ("top 50%", "top 10%", "top 1%", "top 0.1%")
+POPULARITY_BIN_COLUMN = "song_quantile"
+POPULARITY_BINS = ('all tracks', 'Remixes', '0.1% remixes')
+N_RATING_TRIALS_PER_POPULARITY_BIN = 7
 N_RATING_TRIALS_PER_PARTICIPANT = (
     N_RATING_TRIALS_PER_POPULARITY_BIN * len(POPULARITY_BINS)
 )
